@@ -1,0 +1,11 @@
+name = "astralab-question-api"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-09-01"
+
+# Use both your local preview and GitHub Pages origins, separated by commas.
+[vars]
+ALLOWED_ORIGINS = "http://localhost:3000,https://YOUR-NAME.github.io"
+OPENAI_MODEL = "gpt-5-mini"
+
+# Never put OPENAI_API_KEY here. Add it with:
+# npx wrangler secret put OPENAI_API_KEY
