@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -38,22 +38,30 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Fix GitHub Pages output
+      - name: Prepare Pages site
         run: |
-          echo "Before:"
-          find dist/client -maxdepth 2 -name "index.html" -print
+          echo "========== BUILD OUTPUT =========="
+          find dist/client -maxdepth 3 -type f -name "*.html" -print
 
-          if [ -d "dist/client/astronomy-scioly-dsos" ]; then
-            cp -a dist/client/astronomy-scioly-dsos/. dist/client/
-            rm -rf dist/client/astronomy-scioly-dsos
+          rm -rf _site
+          mkdir _site
+
+          # Keep public/static files produced at dist/client root
+          cp -a dist/client/. _site/
+
+          # Vinext + basePath puts the homepage in this directory.
+          # Move its CONTENTS to the Pages artifact root.
+          if [ -f "dist/client/astronomy-scioly-dsos/index.html" ]; then
+            echo "FOUND HOMEPAGE"
+            cp -a dist/client/astronomy-scioly-dsos/. _site/
+            rm -rf _site/astronomy-scioly-dsos
           fi
 
-          touch dist/client/.nojekyll
+          echo "========== FINAL SITE =========="
+          find _site -maxdepth 2 -type f -name "*.html" -print
 
-          echo "After:"
-          find dist/client -maxdepth 2 -name "index.html" -print
-
-          test -f dist/client/index.html
+          test -f _site/index.html
+          touch _site/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -61,7 +69,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: dist/client
+          path: _site
 
   deploy:
     needs: build
