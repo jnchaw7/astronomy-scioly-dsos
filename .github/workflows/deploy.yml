@@ -35,33 +35,33 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Build and prerender
+        run: npm run build -- --prerender-all
 
-      - name: Prepare Pages site
+      - name: Prepare Pages
         run: |
-          echo "========== BUILD OUTPUT =========="
-          find dist/client -maxdepth 3 -type f -name "*.html" -print
+          echo "========== GENERATED HTML =========="
+          find dist/client -type f -name "*.html" -print
+
+          test -f dist/client/index.html
 
           rm -rf _site
           mkdir _site
-
-          # Keep public/static files produced at dist/client root
           cp -a dist/client/. _site/
 
-          # Vinext + basePath puts the homepage in this directory.
-          # Move its CONTENTS to the Pages artifact root.
-          if [ -f "dist/client/astronomy-scioly-dsos/index.html" ]; then
-            echo "FOUND HOMEPAGE"
-            cp -a dist/client/astronomy-scioly-dsos/. _site/
+          # Vinext may place prefixed assets inside this folder.
+          # GitHub Pages already provides the repository URL prefix,
+          # so merge those files into the artifact root.
+          if [ -d "_site/astronomy-scioly-dsos" ]; then
+            cp -a _site/astronomy-scioly-dsos/. _site/
             rm -rf _site/astronomy-scioly-dsos
           fi
 
-          echo "========== FINAL SITE =========="
-          find _site -maxdepth 2 -type f -name "*.html" -print
-
-          test -f _site/index.html
           touch _site/.nojekyll
+
+          echo "========== FINAL =========="
+          find _site -maxdepth 2 -type f -name "*.html" -print
+          test -f _site/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
