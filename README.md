@@ -3,11 +3,13 @@
 A GitHub Pages-compatible Science Olympiad Astronomy practice hub. It includes:
 
 - 109 locally bundled DSO images across all 13 draft-rule targets
-- a specific-DSO gallery with all 109 supplied views across 13 targets and extra results from NASA's public image library
+- a specific-DSO gallery with all 109 supplied views across 13 targets and live, credited results from NASA and Wikimedia Commons
+- an optional identification mode that draws additional views from those public astronomy archives
 - image filters by wavelength and challenge level
 - MCQ and FRQ galaxy drills with Enter-to-check and Enter-to-continue keyboard control
 - a browser-saved frequently-missed DSO identification queue
 - article-length pages for every DSO based on all 190 mentor-deck slides, with web verification, slide-discrepancy warnings, key points, likely test connections, and a mini-quiz after every section
+- a searchable source library containing the full extracted text layer from all 190 slides, 16 object-specific reference documents, and all supplied image captions
 - a second mentor-aligned course covering nine galaxy categories: spiral, barred spiral, elliptical, lenticular, irregular/dwarf, interacting, ring, starburst, and active/peculiar
 - two no-AI galaxy study paths: curated general-galaxy questions from `Practice Test Questions.docx` and object-specific fact drills from the mentor DSO materials
 - randomized calculation practice across seven equation families
