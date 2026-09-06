@@ -20,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+      NEXT_PUBLIC_BASE_PATH: /astronomy-scioly-dsos
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v6
 
       - name: Setup Node
@@ -32,14 +32,28 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
+      - name: Install
         run: npm ci
 
-      - name: Build site
+      - name: Build
         run: npm run build
 
-      - name: Disable Jekyll
-        run: touch dist/client/.nojekyll
+      - name: Fix GitHub Pages output
+        run: |
+          echo "Before:"
+          find dist/client -maxdepth 2 -name "index.html" -print
+
+          if [ -d "dist/client/astronomy-scioly-dsos" ]; then
+            cp -a dist/client/astronomy-scioly-dsos/. dist/client/
+            rm -rf dist/client/astronomy-scioly-dsos
+          fi
+
+          touch dist/client/.nojekyll
+
+          echo "After:"
+          find dist/client -maxdepth 2 -name "index.html" -print
+
+          test -f dist/client/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -47,17 +61,17 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./dist/client
+          path: dist/client
 
   deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
-    runs-on: ubuntu-latest
-    needs: build
-
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
