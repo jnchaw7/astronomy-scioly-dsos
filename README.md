@@ -7,7 +7,7 @@ A GitHub Pages-compatible Science Olympiad Astronomy practice hub. It includes:
 - an optional identification mode that draws additional views from those public astronomy archives
 - image filters by wavelength and challenge level
 - direct-property MCQ galaxy drills plus reveal-and-self-grade FRQs, with Enter keyboard control
-- a per-DSO comprehensive quiz bank compiled from objective properties in `DSOs 2027.xlsx`, mentor-slide priorities, and object reference documents; caption wording is not tested
+- a per-DSO comprehensive quiz bank compiled from objective properties in `DSOs 2027.xlsx`, mentor-slide priorities, and object reference documents; caption wording is not tested, and MCQ distractors are drawn from the same scientific property category
 - a Master Set builder that accepts any combination of the 13 DSOs and creates a scored image-identification plus MCQ/FRQ exam, with per-object results
 - a browser-saved frequently-missed DSO identification queue
 - article-length pages for every DSO based on all 190 mentor-deck slides, with web verification, slide-discrepancy warnings, key points, likely test connections, and a mini-quiz after every section
