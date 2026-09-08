@@ -14,7 +14,7 @@ import type { GalaxyProfile } from './galaxy-study-data';
 type KnowledgeTrack = 'general' | 'specific' | 'master';
 type QuizScope = 'mixed' | 'identification' | 'knowledge';
 type QuizFormat = 'mcq' | 'frq';
-type AnswerState = 'idle' | 'correct' | 'incorrect';
+type AnswerState = 'idle' | 'correct' | 'incorrect' | 'revealed';
 type DsoImage = (typeof dsoImages)[number];
 type MasterCandidate =
   | { id: string; kind: 'identification'; profile: GalaxyProfile; image: DsoImage }
@@ -25,18 +25,6 @@ type Result = { id: string; objectKey: string; kind: 'identification' | 'knowled
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 const asset = (path: string) => `${basePath}${path}`;
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+]/g, ' ').replace(/\s+/g, ' ').trim();
-const answerWords = (value: string) => normalize(value).split(' ').filter((word) => word.length > 2 && !['the', 'and', 'for', 'with', 'from', 'that', 'this', 'about', 'into', 'its', 'are', 'was', 'were'].includes(word));
-
-function isFreeResponseCorrect(response: string, answer: string) {
-  const typed = normalize(response), expected = normalize(answer);
-  if (!typed || !expected) return false;
-  if (typed === expected || (typed.length >= 5 && expected.includes(typed)) || (expected.length >= 5 && typed.includes(expected))) return true;
-  const expectedWords = Array.from(new Set(answerWords(answer))), typedWords = new Set(answerWords(response));
-  const matches = expectedWords.filter((word) => typedWords.has(word)).length;
-  const required = expectedWords.length <= 4 ? expectedWords.length : Math.min(4, Math.ceil(expectedWords.length * 0.35));
-  return matches >= required;
-}
-
 function shuffle<T>(items: T[]) {
   const copy = [...items];
   for (let index = copy.length - 1; index > 0; index -= 1) {
@@ -70,7 +58,7 @@ function buildMasterSet(profiles: GalaxyProfile[], requestedLength: number, scop
   let knowledgeIndex = 0;
   return shuffle(chosen.slice(0, actualLength)).map((item) => {
     if (item.kind === 'identification') return item;
-    const format: QuizFormat = knowledgeIndex === 1 || (knowledgeIndex > 1 && knowledgeIndex % 3 === 1) ? 'frq' : 'mcq';
+    const format: QuizFormat = item.question.frqPrompt && (knowledgeIndex === 1 || (knowledgeIndex > 1 && knowledgeIndex % 3 === 1)) ? 'frq' : 'mcq';
     knowledgeIndex += 1;
     return { ...item, format };
   });
@@ -111,14 +99,17 @@ export function MasterQuizMode({ profiles, initialKey, setTrack }: { profiles: G
     if (!current || !response.trim() || status !== 'idle') return;
     if (current.kind === 'identification') {
       record([current.profile.name, current.profile.imageName, ...current.profile.aliases].some((name) => normalize(name) === normalize(response)));
-    } else {
-      record(isFreeResponseCorrect(response, current.question.answer));
-    }
+    } else setStatus('revealed');
   }
   function choose(choice: string) {
     if (!current || current.kind !== 'knowledge' || status !== 'idle') return;
     setSelectedChoice(choice);
     record(normalize(choice) === normalize(current.question.answer));
+  }
+  function gradeFrq(correct: boolean) {
+    if (!current || current.kind !== 'knowledge' || current.format !== 'frq' || status !== 'revealed') return;
+    setStatus(correct ? 'correct' : 'incorrect');
+    setResults((old) => [...old, { id: current.id, objectKey: current.profile.key, kind: 'knowledge', correct }]);
   }
   function next() {
     if (status === 'idle') return;
@@ -131,7 +122,7 @@ export function MasterQuizMode({ profiles, initialKey, setTrack }: { profiles: G
       const target = event.target as HTMLElement | null;
       if (target?.matches('input, textarea, select, button, [contenteditable="true"]')) return;
       if (phase !== 'quiz' || !current) return;
-      if (event.key === 'Enter' && status !== 'idle') { event.preventDefault(); next(); return; }
+      if (event.key === 'Enter' && (status === 'correct' || status === 'incorrect')) { event.preventDefault(); next(); return; }
       if (current.kind !== 'knowledge' || current.format !== 'mcq' || status !== 'idle') return;
       const choiceIndex = 'abcd'.indexOf(event.key.toLowerCase());
       const choice = current.question.choices?.[choiceIndex];
@@ -160,8 +151,8 @@ export function MasterQuizMode({ profiles, initialKey, setTrack }: { profiles: G
   const answer = current.kind === 'identification' ? current.profile.name : current.question.answer;
   const explanation = current.kind === 'identification' ? current.image.context : current.question.explanation;
   return <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_290px]"><section className="overflow-hidden rounded-[26px] border border-white/10 bg-card"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 px-5 py-4 sm:px-8"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300">Master set · {scope}</p><p className="mt-1 text-sm text-slate-400">Question {index + 1} of {items.length}</p></div><Badge className="bg-violet-300/10 text-violet-200">{current.profile.name}</Badge></div><Progress value={(index + Number(status !== 'idle')) / items.length * 100} />
-    {current.kind === 'identification' ? <><div className="aspect-[16/9] bg-black"><img src={asset(current.image.image)} alt="Unlabeled DSO for identification" className="h-full w-full object-contain" /></div><div className="p-5 sm:p-8"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"><ImageIcon className="mr-2 inline size-4" />Image identification</p><h2 className="mt-3 font-display text-2xl font-semibold">Identify this DSO</h2></div></> : <div className="p-5 sm:p-8"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">{current.format === 'frq' ? 'Free response' : 'Multiple choice'}</p><Badge className="bg-white/5 text-slate-300">{current.question.sourceLabel}</Badge></div><p className="mt-3 text-[11px] uppercase tracking-[0.14em] text-slate-500">{current.question.section}{current.question.subsection ? ` · ${current.question.subsection}` : ''}</p><h2 className="mt-3 max-w-4xl font-display text-2xl font-semibold leading-snug sm:text-3xl">{current.question.prompt}</h2></div>}
-    <div className={`${current.kind === 'identification' ? 'px-5 pb-6 sm:px-8 sm:pb-8' : 'px-5 pb-6 sm:px-8 sm:pb-8'}`}>{isText ? <form onSubmit={(event) => { event.preventDefault(); if (status === 'idle') submitText(); else next(); }} className="flex flex-col gap-3 sm:flex-row"><Input autoFocus value={response} onChange={(event) => setResponse(event.target.value)} disabled={status !== 'idle'} placeholder={current.kind === 'identification' ? 'Object name or catalog number' : 'Type a short response'} className="h-11 flex-1 border-white/10 bg-white/5" /><Button type="submit" autoFocus={status !== 'idle'} className="h-11 bg-cyan-300 text-slate-950 hover:bg-cyan-200">{status === 'idle' ? 'Check answer' : 'Next question'} <ChevronRight /></Button></form> : <div className="grid gap-3">{current.kind === 'knowledge' && current.question.choices?.map((choice, choiceIndex) => { const isAnswer = normalize(choice) === normalize(current.question.answer), picked = choice === selectedChoice, tone = status === 'idle' ? 'border-white/10 hover:border-cyan-300/40 hover:bg-white/5' : isAnswer ? 'border-emerald-300/40 bg-emerald-300/10' : picked ? 'border-rose-300/40 bg-rose-300/10' : 'border-white/5 opacity-55'; return <button type="button" key={choice} onClick={() => choose(choice)} disabled={status !== 'idle'} className={`flex items-start gap-3 rounded-2xl border p-4 text-left text-sm transition ${tone}`}><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-white/5 text-xs font-semibold text-slate-400">{String.fromCharCode(65 + choiceIndex)}</span><span className="pt-1">{choice}</span></button>; })}</div>}
-      {status !== 'idle' && <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.035] p-5"><p className={`text-sm font-semibold ${status === 'correct' ? 'text-emerald-300' : 'text-rose-300'}`}>{status === 'correct' ? 'Correct' : `Answer: ${answer}`}</p><p className="mt-2 text-sm leading-relaxed text-slate-400">{explanation}</p>{!isText && <Button type="button" autoFocus onClick={next} className="mt-4 bg-cyan-300 text-slate-950 hover:bg-cyan-200">Next question <ChevronRight /></Button>}<p className="mt-3 text-[11px] text-slate-500">Press Enter to continue.</p></div>}</div>
+    {current.kind === 'identification' ? <><div className="aspect-[16/9] bg-black"><img src={asset(current.image.image)} alt="Unlabeled DSO for identification" className="h-full w-full object-contain" /></div><div className="p-5 sm:p-8"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"><ImageIcon className="mr-2 inline size-4" />Image identification</p><h2 className="mt-3 font-display text-2xl font-semibold">Identify this DSO</h2></div></> : <div className="p-5 sm:p-8"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">{current.format === 'frq' ? 'Free response' : 'Multiple choice'}</p><Badge className="bg-white/5 text-slate-300">{current.question.sourceLabel}</Badge></div><p className="mt-3 text-[11px] uppercase tracking-[0.14em] text-slate-500">{current.question.section}{current.question.subsection ? ` · ${current.question.subsection}` : ''}</p><h2 className="mt-3 max-w-4xl font-display text-2xl font-semibold leading-snug sm:text-3xl">{current.format === 'frq' ? current.question.frqPrompt ?? current.question.prompt : current.question.prompt}</h2></div>}
+    <div className={`${current.kind === 'identification' ? 'px-5 pb-6 sm:px-8 sm:pb-8' : 'px-5 pb-6 sm:px-8 sm:pb-8'}`}>{isText ? <form onSubmit={(event) => { event.preventDefault(); if (status === 'idle') submitText(); else if (status === 'correct' || status === 'incorrect') next(); }} className="flex flex-col gap-3 sm:flex-row"><Input autoFocus value={response} onChange={(event) => setResponse(event.target.value)} disabled={status !== 'idle'} placeholder={current.kind === 'identification' ? 'Object name or catalog number' : 'Write an answer first, or reveal when ready'} className="h-11 flex-1 border-white/10 bg-white/5" /><Button type="submit" disabled={status === 'revealed'} autoFocus={status === 'correct' || status === 'incorrect'} className="h-11 bg-cyan-300 text-slate-950 hover:bg-cyan-200">{status === 'idle' ? current.kind === 'identification' ? 'Check answer' : 'Reveal answer' : status === 'revealed' ? 'Review below' : 'Next question'} <ChevronRight /></Button></form> : <div className="grid gap-3">{current.kind === 'knowledge' && current.question.choices?.map((choice, choiceIndex) => { const isAnswer = normalize(choice) === normalize(current.question.answer), picked = choice === selectedChoice, tone = status === 'idle' ? 'border-white/10 hover:border-cyan-300/40 hover:bg-white/5' : isAnswer ? 'border-emerald-300/40 bg-emerald-300/10' : picked ? 'border-rose-300/40 bg-rose-300/10' : 'border-white/5 opacity-55'; return <button type="button" key={choice} onClick={() => choose(choice)} disabled={status !== 'idle'} className={`flex items-start gap-3 rounded-2xl border p-4 text-left text-sm transition ${tone}`}><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-white/5 text-xs font-semibold text-slate-400">{String.fromCharCode(65 + choiceIndex)}</span><span className="pt-1">{choice}</span></button>; })}</div>}
+      {status !== 'idle' && <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.035] p-5"><p className={`text-sm font-semibold ${status === 'correct' ? 'text-emerald-300' : status === 'revealed' ? 'text-cyan-200' : 'text-rose-300'}`}>{status === 'correct' ? 'Marked correct' : status === 'revealed' ? `Model answer: ${answer}` : `Answer: ${answer}`}</p>{current.kind === 'knowledge' && current.format === 'frq' && response && <p className="mt-2 text-xs leading-relaxed text-slate-500">Your response: {response}</p>}<p className="mt-2 text-sm leading-relaxed text-slate-400">{explanation}</p>{status === 'revealed' && current.kind === 'knowledge' && current.format === 'frq' && <div className="mt-4 flex flex-wrap gap-2"><Button type="button" onClick={() => gradeFrq(true)} className="bg-emerald-300 text-slate-950 hover:bg-emerald-200"><Check />I got it</Button><Button type="button" variant="outline" onClick={() => gradeFrq(false)} className="border-white/10 bg-white/5">I missed it</Button></div>}{!isText && <Button type="button" autoFocus onClick={next} className="mt-4 bg-cyan-300 text-slate-950 hover:bg-cyan-200">Next question <ChevronRight /></Button>}{(status === 'correct' || status === 'incorrect') && <p className="mt-3 text-[11px] text-slate-500">Press Enter to continue.</p>}</div>}</div>
   </section><aside className="space-y-5"><section className="rounded-[22px] border border-cyan-300/15 bg-gradient-to-br from-cyan-300/8 to-violet-400/5 p-5"><Trophy className="size-5 text-cyan-300" /><p className="mt-3 font-medium">Live score</p><p className="mt-2 font-display text-4xl font-semibold">{correctCount}<span className="text-lg text-slate-500">/{results.length}</span></p><p className="mt-3 text-xs leading-relaxed text-slate-400">This set includes {selectedProfiles.length} selected DSO{selectedProfiles.length === 1 ? '' : 's'}.</p></section><section className="rounded-[22px] border border-white/10 bg-card p-5"><Images className="size-5 text-violet-300" /><p className="mt-3 text-sm font-medium">Question sources</p><p className="mt-2 text-xs leading-relaxed text-slate-400">Supplied DSO images, DSOs 2027 spreadsheet, mentor slideshow priorities, document captions, and reference articles.</p></section></aside></div>;
 }

@@ -1,4 +1,3 @@
-import { dsoImages } from './dso-data';
 import { galaxyProfiles, makeGalaxyStudyQuestions, type GalaxyProfile } from './galaxy-study-data';
 import { spreadsheetDsoFacts } from './dso-spreadsheet-data';
 import { dsoArticles } from './study-article-data';
@@ -7,13 +6,19 @@ import type { PracticeQuestion } from './question-bank';
 export type DsoQuizQuestion = PracticeQuestion & {
   objectKey: string;
   sourceLabel: 'DSOs 2027 spreadsheet' | 'Mentor slideshow' | 'Reference document' | 'Mentor DSO profile';
+  frqPrompt?: string;
 };
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const objectNames = galaxyProfiles.flatMap((profile) => [profile.name, profile.imageName, ...profile.aliases]).filter((value) => value.length > 2).sort((a, b) => b.length - a.length);
 
 function withoutObjectNames(value: string) {
-  return objectNames.reduce((text, name) => text.replace(new RegExp(escapeRegex(name), 'gi'), 'this object'), value).replace(/\s+/g, ' ').trim();
+  return objectNames
+    .reduce((text, name) => text.replace(new RegExp(escapeRegex(name), 'gi'), 'this object'), value)
+    .replace(/this object\s*=\s*this object/gi, 'a galaxy with a distinct catalog identity')
+    .replace(/(?:this object\s*){2,}/gi, 'this object ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function shuffled<T>(items: T[], seed: string) {
@@ -27,7 +32,49 @@ function choices(answer: string, distractors: string[], seed: string) {
 }
 
 function sourceQuestion(question: PracticeQuestion, profile: GalaxyProfile): DsoQuizQuestion {
-  return { ...question, objectKey: profile.key, sourceLabel: 'Mentor DSO profile', section: 'Mentor DSO profile', subsection: profile.name };
+  const field = question.id.slice(profile.key.length + 1);
+  const frqPrompts: Record<string, string> = {
+    constellation: `In which constellation is ${profile.name} located?`,
+    morphology: `Give the morphological classification of ${profile.name}.`,
+    distance: `Approximately how far from Earth is ${profile.name}?`,
+    association: `What group, cluster, host, or companion relationship is associated with ${profile.name}?`,
+    visualSignature: `Give one visual feature that can distinguish ${profile.name} in an image.`,
+    definingFact: `State one scientifically important fact about ${profile.name}.`,
+    discovery: `Who discovered ${profile.name}, or what major historical observation is associated with it?`,
+  };
+  return { ...question, objectKey: profile.key, sourceLabel: 'Mentor DSO profile', section: 'Mentor DSO profile', subsection: profile.name, frqPrompt: frqPrompts[field] };
+}
+
+function spreadsheetPrompt(label: string, profile: GalaxyProfile) {
+  const prompts: Record<string, [string, string]> = {
+    Description: [`Which description most accurately characterizes ${profile.name}?`, `Briefly characterize ${profile.name}.`],
+    Constellation: [`In which constellation is ${profile.name} located?`, `In which constellation is ${profile.name} located?`],
+    '(Galaxy) Type': [`What type or morphological classification best describes ${profile.name}?`, `Give the type or morphological classification of ${profile.name}.`],
+    'Size (longest diameter)': [`What is the approximate longest diameter of ${profile.name}?`, `Give the approximate longest diameter of ${profile.name}.`],
+    'Mass (M☉)': [`What is the approximate mass listed for ${profile.name}?`, `Give the approximate mass of ${profile.name}.`],
+    Redshift: [`What redshift is listed for ${profile.name}?`, `Give the approximate redshift of ${profile.name}.`],
+    Distance: [`What is the approximate distance to ${profile.name}?`, `Approximately how far away is ${profile.name}?`],
+    'Apparent Magnitude': [`What is the approximate apparent magnitude of ${profile.name}?`, `Give the approximate apparent magnitude of ${profile.name}.`],
+    'Member of': [`Which larger group or system contains ${profile.name}?`, `What larger group or system contains ${profile.name}?`],
+    'Spiral Arms': [`Which statement correctly describes the spiral-arm structure of ${profile.name}?`, `Describe the spiral-arm structure of ${profile.name}.`],
+    'Globular clusters': [`Which statement correctly describes the globular-cluster population of ${profile.name}?`, `What is notable about the globular-cluster population of ${profile.name}?`],
+    'Star Formation Rate (M☉/yr)': [`What star-formation rate is listed for ${profile.name}?`, `Give the approximate star-formation rate of ${profile.name}.`],
+  };
+  return prompts[label] ?? [`Which value is correct for ${profile.name}?`, `Give the ${label.toLowerCase()} of ${profile.name}.`];
+}
+
+function directFactPrompt(profile: GalaxyProfile, fact: string, context = '') {
+  const text = `${context} ${fact}`.toLowerCase();
+  if (/diameter|physical size|longest diameter|kiloparsec|\bkpc\b/.test(text)) return `What is the approximate physical size or diameter of ${profile.name}?`;
+  if (/distance|light-years|light years|megaparsec|\bmpc\b/.test(text)) return `Approximately how far away is ${profile.name}?`;
+  if (/morpholog|classif|spiral|elliptical|irregular|lenticular|barred|peculiar/.test(text)) return `What is the morphology or galaxy type of ${profile.name}?`;
+  if (/collision|collid|interact|merg|tidal|companion|unequal pair|ring wave|density wave/.test(text)) return `What interaction or dynamical process best explains ${profile.name}?`;
+  if (/local group|member|cluster|environment|satellite|host/.test(text)) return `What group, environment, or companion relationship is associated with ${profile.name}?`;
+  if (/star.?formation|starburst|super star cluster|stellar population/.test(text)) return `What is notable about star formation or the stellar population in ${profile.name}?`;
+  if (/black hole|active nucleus|agn|x-ray|gamma|radio|infrared|ultraviolet|multiwavelength|wavelength/.test(text)) return `Which wavelength-dependent observation or energetic feature is associated with ${profile.name}?`;
+  if (/discover|observed|history|century|\b(18|19|20)\d{2}\b/.test(text)) return `What discovery or historical observation is associated with ${profile.name}?`;
+  if (/recogn|appearance|dust lane|inclined|edge-on|face-on|arms|spokes|tails|knots|shape/.test(text)) return `Which visual feature is most useful for recognizing ${profile.name}?`;
+  return `Which specific scientific fact about ${profile.name} is correct?`;
 }
 
 export function makeComprehensiveDsoQuiz(profile: GalaxyProfile): DsoQuizQuestion[] {
@@ -41,30 +88,23 @@ export function makeComprehensiveDsoQuiz(profile: GalaxyProfile): DsoQuizQuestio
     const distractors = otherProfiles.flatMap((other) => (spreadsheetDsoFacts[other.key] ?? []).filter((candidate) => candidate.label === fact.label && candidate.value.length <= 190).map((candidate) => candidate.value));
     const answer = withoutObjectNames(fact.value), options = choices(answer, distractors, `${profile.key}:sheet:${index}`);
     if (options.length < 4) return;
-    questions.push({ id: `${profile.key}-sheet-${index}`, objectKey: profile.key, sourceLabel: 'DSOs 2027 spreadsheet', topic: profile.name, difficulty: 'Invitational', source: 'document', section: `DSOs 2027 spreadsheet · ${fact.sheet}`, subsection: fact.label, prompt: `According to the DSO spreadsheet, which ${fact.label.toLowerCase()} entry belongs to ${profile.name}?`, choices: options, answer, explanation: `${fact.subject} — ${fact.label}: ${fact.value}` });
+    const [prompt, frqPrompt] = spreadsheetPrompt(fact.label, profile);
+    questions.push({ id: `${profile.key}-sheet-${index}`, objectKey: profile.key, sourceLabel: 'DSOs 2027 spreadsheet', topic: profile.name, difficulty: 'Invitational', source: 'document', section: `DSOs 2027 spreadsheet · ${fact.sheet}`, subsection: fact.label, prompt, frqPrompt, choices: options, answer, explanation: `${fact.subject} — ${fact.label}: ${fact.value}` });
   });
 
   article?.mentorPriority.forEach((point, index) => {
     const distractors = otherProfiles.flatMap((other) => dsoArticles.find((item) => item.key === other.key)?.mentorPriority ?? []);
     const answer = withoutObjectNames(point), options = choices(answer, distractors, `${profile.key}:slide:${index}`);
     if (options.length < 4) return;
-    questions.push({ id: `${profile.key}-slide-${index}`, objectKey: profile.key, sourceLabel: 'Mentor slideshow', topic: profile.name, difficulty: 'Invitational', source: 'document', section: article.deck, subsection: 'Mentor emphasis', prompt: `Which statement is emphasized in the mentor slideshow for ${profile.name}?`, choices: options, answer, explanation: point });
+    questions.push({ id: `${profile.key}-slide-${index}`, objectKey: profile.key, sourceLabel: 'Mentor slideshow', topic: profile.name, difficulty: 'Invitational', source: 'document', section: article.deck, subsection: 'Mentor emphasis', prompt: directFactPrompt(profile, point, 'Mentor emphasis'), choices: options, answer, explanation: point });
   });
 
   article?.sections.forEach((section, sectionIndex) => section.keyPoints.slice(0, 3).forEach((point, pointIndex) => {
     const distractors = otherProfiles.flatMap((other) => dsoArticles.find((item) => item.key === other.key)?.sections.flatMap((item) => item.keyPoints) ?? []);
     const answer = withoutObjectNames(point), options = choices(answer, distractors, `${profile.key}:doc:${sectionIndex}:${pointIndex}`);
     if (options.length < 4) return;
-    questions.push({ id: `${profile.key}-document-${sectionIndex}-${pointIndex}`, objectKey: profile.key, sourceLabel: 'Reference document', topic: profile.name, difficulty: pointIndex === 0 ? 'Core' : 'Nationals', source: 'document', section: 'Object reference documents', subsection: section.title, prompt: `Which fact belongs in the “${section.title}” section for ${profile.name}?`, choices: options, answer, explanation: `${point} ${section.paragraphs[0] ?? ''}` });
+    questions.push({ id: `${profile.key}-document-${sectionIndex}-${pointIndex}`, objectKey: profile.key, sourceLabel: 'Reference document', topic: profile.name, difficulty: pointIndex === 0 ? 'Core' : 'Nationals', source: 'document', section: 'Object reference documents', subsection: section.title, prompt: directFactPrompt(profile, point, section.title), choices: options, answer, explanation: `${point} ${section.paragraphs[0] ?? ''}` });
   }));
-
-  const captions = Array.from(new Set(dsoImages.filter((image) => image.name === profile.imageName).map((image) => image.context.split(/(?<=[.!?])\s+/)[0]).filter((caption) => caption.length >= 35 && caption.length <= 190)));
-  captions.slice(0, 3).forEach((caption, index) => {
-    const distractors = otherProfiles.flatMap((other) => dsoImages.filter((image) => image.name === other.imageName).map((image) => image.context.split(/(?<=[.!?])\s+/)[0]).filter((item) => item.length >= 35 && item.length <= 190));
-    const answer = withoutObjectNames(caption), options = choices(answer, distractors, `${profile.key}:caption:${index}`);
-    if (options.length < 4) return;
-    questions.push({ id: `${profile.key}-caption-${index}`, objectKey: profile.key, sourceLabel: 'Reference document', topic: profile.name, difficulty: 'Core', source: 'document', section: 'DSO Images 26_27.docx', subsection: 'Image captions', prompt: `Which supplied image caption belongs to ${profile.name}?`, choices: options, answer, explanation: caption });
-  });
 
   return Array.from(new Map(questions.map((question) => [question.id, question])).values());
 }

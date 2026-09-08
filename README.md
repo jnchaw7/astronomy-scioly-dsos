@@ -6,15 +6,15 @@ A GitHub Pages-compatible Science Olympiad Astronomy practice hub. It includes:
 - a specific-DSO gallery with all 109 supplied views across 13 targets and live, credited results from NASA and Wikimedia Commons
 - an optional identification mode that draws additional views from those public astronomy archives
 - image filters by wavelength and challenge level
-- MCQ and FRQ galaxy drills with Enter-to-check and Enter-to-continue keyboard control
-- a per-DSO comprehensive quiz bank compiled from `DSOs 2027.xlsx`, mentor-slide priorities, object reference documents, and supplied image captions
+- direct-property MCQ galaxy drills plus reveal-and-self-grade FRQs, with Enter keyboard control
+- a per-DSO comprehensive quiz bank compiled from objective properties in `DSOs 2027.xlsx`, mentor-slide priorities, and object reference documents; caption wording is not tested
 - a Master Set builder that accepts any combination of the 13 DSOs and creates a scored image-identification plus MCQ/FRQ exam, with per-object results
 - a browser-saved frequently-missed DSO identification queue
 - article-length pages for every DSO based on all 190 mentor-deck slides, with web verification, slide-discrepancy warnings, key points, likely test connections, and a mini-quiz after every section
 - a searchable source library containing the full extracted text layer from all 190 slides, 16 object-specific reference documents, and all supplied image captions
 - a second mentor-aligned course covering nine galaxy categories: spiral, barred spiral, elliptical, lenticular, irregular/dwarf, interacting, ring, starburst, and active/peculiar
 - two no-AI galaxy study paths: curated general-galaxy questions from `Practice Test Questions.docx` and object-specific fact drills from the mentor DSO materials
-- randomized calculation practice across seven equation families
+- randomized, 3–5 part calculation challenges adapted from the supplied 146-page practice collection, including redshift-distance chains, cluster virial mass, angular size, black-hole orbits, binaries, Cepheids, quasars, supernovae, and globular clusters
 - a local PDF/DOCX/TXT style library
 - optional fresh AI questions through a private serverless endpoint
 
