@@ -214,6 +214,18 @@ function MobileNav({ mode, setMode }: { mode: Mode; setMode(v: Mode): void }) { 
 type Dso = (typeof dsoImages)[number];
 function IdentifyMode({ current, count, index, answer, setAnswer, status, showClue, setShowClue, check, next, difficulty, setDifficulty, band, setBand, bands, accuracy, stats, missedCount, openGalaxyLab, useOnline, setUseOnline, onlineImage, onlineLoading }: { current: Dso; count: number; index: number; answer: string; setAnswer(v: string): void; status: AnswerState; showClue: boolean; setShowClue(v: boolean): void; check(): void; next(): void; difficulty: string; setDifficulty(v: string): void; band: string; setBand(v: string): void; bands: string[]; accuracy: number; stats: Stats; missedCount: number; openGalaxyLab(): void; useOnline: boolean; setUseOnline(v: boolean): void; onlineImage: ArchiveImage | null; onlineLoading: boolean }) {
   const remoteReady = useOnline && onlineImage && !onlineLoading;
+  useEffect(() => {
+    if (status === 'idle') return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Enter' || event.repeat) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('button')) return;
+      event.preventDefault();
+      next();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [next, status]);
   return <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_290px]"><section className="overflow-hidden rounded-[26px] border border-white/10 bg-card shadow-2xl shadow-black/20">
     <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/8 px-5 py-4 sm:px-6"><div className="flex flex-wrap gap-3"><SelectField label="Challenge" value={difficulty} onChange={setDifficulty}><option>All levels</option>{missedCount > 0 && <option>Frequently missed</option>}{difficulties.map((d) => <option key={d}>{d}</option>)}</SelectField><SelectField label="Wavelength" value={band} onChange={setBand}>{bands.map((b) => <option key={b}>{b}</option>)}</SelectField><label className="flex h-10 items-center gap-2 self-end rounded-xl border border-white/10 bg-white/[0.035] px-3 text-xs text-slate-300"><input type="checkbox" checked={useOnline} onChange={(event) => setUseOnline(event.target.checked)} className="accent-cyan-300" />Include web archives</label></div><span className="text-xs text-slate-500">Image {(index % Math.max(count, 1)) + 1} · {count} bundled</span></div>
     <div className="relative aspect-[16/9] overflow-hidden bg-black">{onlineLoading && useOnline ? <div className="grid h-full place-items-center text-sm text-slate-500"><LoaderCircle className="mb-2 size-6 animate-spin text-cyan-300" />Loading an official archive view…</div> : <img key={remoteReady ? onlineImage.id : current.id} src={remoteReady ? onlineImage.image : asset(current.image)} alt="Unlabeled deep-sky object for identification" className="h-full w-full object-contain" />}<div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" /><div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 text-[11px] text-slate-200 backdrop-blur-md"><Atom className="size-3.5 text-cyan-300" />{remoteReady ? onlineImage.source : current.band}</div></div>
