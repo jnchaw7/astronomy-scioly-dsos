@@ -4,7 +4,6 @@ export type GalaxyProfile = {
   imageName: string;
   nasaQuery?: string;
   aliases: string[];
-  constellation: string;
   morphology: string;
   distance: string;
   association: string;
@@ -48,7 +47,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'Andromeda Galaxy',
     nasaQuery: 'Andromeda Galaxy',
     aliases: ['M31', 'NGC 224'],
-    constellation: 'Andromeda',
     morphology: 'Barred spiral galaxy',
     distance: 'About 2.5 million light-years',
     association: 'The Local Group',
@@ -62,7 +60,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'Sombrero Galaxy',
     nasaQuery: 'Sombrero Galaxy',
     aliases: ['M104', 'NGC 4594'],
-    constellation: 'Virgo',
     morphology: 'Peculiar galaxy, commonly classified SA(s)a or E',
     distance: 'About 30 million light-years',
     association: 'Virgo II Groups',
@@ -76,7 +73,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'M51',
     nasaQuery: 'Whirlpool Galaxy',
     aliases: ['M51a', 'NGC 5194'],
-    constellation: 'Canes Venatici',
     morphology: 'Interacting grand-design spiral galaxy with a Seyfert 2 nucleus',
     distance: 'About 23.5 million light-years',
     association: 'M51 Group; interacting with NGC 5195',
@@ -89,7 +85,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     name: 'NGC 4536',
     imageName: 'NGC 4536',
     aliases: ['UGC 7732', 'PGC 41823'],
-    constellation: 'Virgo',
     morphology: 'SAB(rs)bc intermediate spiral and starburst galaxy',
     distance: 'About 49 million light-years',
     association: 'M61 Group within the Virgo II Groups',
@@ -103,7 +98,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'MCG+07-33-027',
     nasaQuery: 'MCG 07 33 027',
     aliases: ['PGC 56779', 'LEDA 56779'],
-    constellation: 'Hercules',
     morphology: 'Face-on Sa spiral and isolated starburst galaxy',
     distance: 'About 329 million light-years',
     association: 'A field galaxy, not a known group or cluster member',
@@ -117,7 +111,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'NGC 1569',
     nasaQuery: 'NGC 1569',
     aliases: ['Arp 210', 'UGC 3056'],
-    constellation: 'Camelopardalis',
     morphology: 'IBm dwarf irregular starburst galaxy',
     distance: 'About 11 million light-years',
     association: 'IC 342/Maffei Group',
@@ -131,7 +124,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'Antennae Galaxies',
     nasaQuery: 'Antennae Galaxies',
     aliases: ['NGC 4038/4039', 'Arp 244'],
-    constellation: 'Corvus',
     morphology: 'Interacting pair of spiral galaxies in a starburst phase',
     distance: 'About 72 million light-years',
     association: 'NGC 4038 Group',
@@ -144,7 +136,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     name: 'Arp 143',
     imageName: 'Arp 143',
     aliases: ['NGC 2444/2445', 'VV 117'],
-    constellation: 'Lynx',
     morphology: 'Interacting system containing a lenticular galaxy and a distorted ring galaxy',
     distance: 'About 135 million light-years',
     association: 'LGG 148 galaxy group',
@@ -157,7 +148,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     name: 'Arp 147',
     imageName: 'Arp 147',
     aliases: ['IC 298/298A', 'VV 787'],
-    constellation: 'Cetus',
     morphology: 'Interacting pair dominated by a collision-made ring galaxy',
     distance: 'About 430 to 440 million light-years',
     association: 'Not part of a known galaxy group',
@@ -171,7 +161,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'Cartwheel Galaxy',
     nasaQuery: 'Cartwheel Galaxy',
     aliases: ['ESO 350-40', 'PGC 2248'],
-    constellation: 'Sculptor',
     morphology: 'S pec lenticular ring galaxy',
     distance: 'About 500 million light-years',
     association: 'Dominant member of the Cartwheel Galaxy group',
@@ -185,7 +174,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'M82',
     nasaQuery: 'M82',
     aliases: ['Cigar Galaxy', 'NGC 3034'],
-    constellation: 'Ursa Major',
     morphology: 'Nearly edge-on I0 starburst galaxy',
     distance: 'About 11.4 to 12.4 million light-years',
     association: 'M81 Group; strongly affected by M81',
@@ -199,7 +187,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'GW170817',
     nasaQuery: 'GW170817',
     aliases: ['AT 2017gfo', 'SSS17a'],
-    constellation: 'Hydra',
     morphology: 'Binary neutron-star merger and kilonova hosted by NGC 4993',
     distance: 'About 130 million light-years (40 Mpc)',
     association: 'Host galaxy NGC 4993',
@@ -213,7 +200,6 @@ export const galaxyProfiles: GalaxyProfile[] = [
     imageName: 'Terzan 5',
     nasaQuery: 'Terzan 5',
     aliases: ['Terzan 5 stellar system'],
-    constellation: 'Sagittarius',
     morphology: 'Dense globular-cluster-like stellar system in the Galactic bulge',
     distance: 'About 19,000 light-years (5.9 kpc)',
     association: 'Milky Way Galactic bulge',
@@ -234,11 +220,6 @@ function mixedChoices(answer: string, distractors: string[], seed: number) {
 export function makeGalaxyStudyQuestions(profile: GalaxyProfile): GalaxyStudyQuestion[] {
   const others = galaxyProfiles.filter((item) => item.key !== profile.key);
   const templates = [
-    {
-      field: 'constellation' as const,
-      prompt: `Which constellation contains ${profile.name}?`,
-      explanation: `${profile.name} lies in ${profile.constellation}.`,
-    },
     {
       field: 'morphology' as const,
       prompt: `Which classification best matches ${profile.name}?`,

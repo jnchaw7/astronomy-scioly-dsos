@@ -2,8 +2,9 @@
 
 A GitHub Pages-compatible Science Olympiad Astronomy practice hub. It includes:
 
-- 109 locally bundled DSO images across all 13 draft-rule targets
-- a specific-DSO gallery with all 109 supplied views across 13 targets and live, credited results from NASA and Wikimedia Commons
+- 515 locally bundled DSO images and scientific figures across all 13 draft-rule targets
+- a specific-DSO gallery combining the original 109 views with 406 unique figures extracted from `DSO Images 26_27.pdf`, plus live credited results from NASA and Wikimedia Commons
+- constellation pages, facts, and quiz questions are excluded
 - an optional identification mode that draws additional views from those public astronomy archives
 - image filters by wavelength and challenge level
 - direct-property MCQ galaxy drills plus reveal-and-self-grade FRQs, with Enter keyboard control

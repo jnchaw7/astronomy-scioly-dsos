@@ -1,4 +1,6 @@
-export const dsoImages = [
+import { dsoPdfImages, type DsoPdfImage } from './dso-pdf-data';
+
+const originalDsoImages: DsoPdfImage[] = [
   {
     "id": "andromeda-galaxy-01",
     "name": "Andromeda Galaxy",
@@ -210,7 +212,7 @@ export const dsoImages = [
     "image": "/dso-bank/m51-01.webp",
     "band": "Visible",
     "difficulty": "Foundations",
-    "context": "The Whirlpool Galaxy (Spiral Galaxy M51, NGC 5194), a classic spiral galaxy located in the Canes Venatici constellation, and its companion NGC 5195, HST"
+    "context": "The Whirlpool Galaxy (Spiral Galaxy M51, NGC 5194) and its companion NGC 5195, HST"
   },
   {
     "id": "m51-02",
@@ -1302,4 +1304,9 @@ export const dsoImages = [
     "difficulty": "MIT-style",
     "context": "HST >WFC3, the Multi-conjugate Adaptive Optics Demonstrator (MAD) instrument on Very Large Telescope (VLT) and the second generation Near Infrared Camera at the Keck Telescope."
   }
-] as const;
+] as DsoPdfImage[];
+
+export const dsoImages: DsoPdfImage[] = [...originalDsoImages, ...dsoPdfImages].map((image) => ({
+  ...image,
+  context: /\bconstellations?\b/i.test(image.context) ? `Supplied ${image.band} view of ${image.name}.` : image.context,
+}));
