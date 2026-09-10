@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { makeComprehensiveDsoQuiz, type DsoQuizQuestion } from './comprehensive-quiz';
 import { dsoImages } from './dso-data';
+import { isDsoAnswerCorrect } from './dso-answer';
 import type { GalaxyProfile } from './galaxy-study-data';
 
 type KnowledgeTrack = 'general' | 'specific' | 'master';
@@ -98,7 +99,7 @@ export function MasterQuizMode({ profiles, initialKey, setTrack }: { profiles: G
   function submitText() {
     if (!current || !response.trim() || status !== 'idle') return;
     if (current.kind === 'identification') {
-      record([current.profile.name, current.profile.imageName, ...current.profile.aliases].some((name) => normalize(name) === normalize(response)));
+      record(isDsoAnswerCorrect(response, [current.profile.name, current.profile.imageName, ...current.profile.aliases]));
     } else setStatus('revealed');
   }
   function choose(choice: string) {
