@@ -2,10 +2,12 @@
 
 A GitHub Pages-compatible Science Olympiad Astronomy practice hub. It includes:
 
-- 109 locally bundled DSO images across all 13 draft-rule targets
-- a specific-DSO gallery with all 109 supplied views across 13 targets and live, credited results from NASA and Wikimedia Commons
+- 515 locally bundled DSO images and scientific figures across all 13 draft-rule targets
+- a specific-DSO gallery combining the original 109 views with 406 unique figures extracted from `DSO Images 26_27.pdf`, plus live credited results from NASA and Wikimedia Commons
+- a 336-figure DSO ID practice bank from that packet, including 246 paper/data figures (plots, spectra, maps, and research panels); answer-bearing captions and labels are removed or excluded, while all 406 originals remain in the gallery
+- constellation pages, facts, and quiz questions are excluded
 - an optional identification mode that draws additional views from those public astronomy archives
-- image filters by wavelength and challenge level
+- ID filters for paper figures versus object views, wavelength, and challenge level
 - direct-property MCQ galaxy drills plus reveal-and-self-grade FRQs, with Enter keyboard control
 - a per-DSO comprehensive quiz bank compiled from objective properties in `DSOs 2027.xlsx`, mentor-slide priorities, and object reference documents; caption wording is not tested, and MCQ distractors are drawn from the same scientific property category
 - a Master Set builder that accepts any combination of the 13 DSOs and creates a scored image-identification plus MCQ/FRQ exam, with per-object results

@@ -36,7 +36,6 @@ function choices(answer: string, distractors: string[], seed: string) {
 function sourceQuestion(question: PracticeQuestion, profile: GalaxyProfile): DsoQuizQuestion {
   const field = question.id.slice(profile.key.length + 1);
   const frqPrompts: Record<string, string> = {
-    constellation: `In which constellation is ${profile.name} located?`,
     morphology: `Give the morphological classification of ${profile.name}.`,
     distance: `Approximately how far from Earth is ${profile.name}?`,
     association: `What group, cluster, host, or companion relationship is associated with ${profile.name}?`,
@@ -50,7 +49,6 @@ function sourceQuestion(question: PracticeQuestion, profile: GalaxyProfile): Dso
 function spreadsheetPrompt(label: string, profile: GalaxyProfile) {
   const prompts: Record<string, [string, string]> = {
     Description: [`Which description most accurately characterizes ${profile.name}?`, `Briefly characterize ${profile.name}.`],
-    Constellation: [`In which constellation is ${profile.name} located?`, `In which constellation is ${profile.name} located?`],
     '(Galaxy) Type': [`What type or morphological classification best describes ${profile.name}?`, `Give the type or morphological classification of ${profile.name}.`],
     'Size (longest diameter)': [`What is the approximate longest diameter of ${profile.name}?`, `Give the approximate longest diameter of ${profile.name}.`],
     'Mass (M☉)': [`What is the approximate mass listed for ${profile.name}?`, `Give the approximate mass of ${profile.name}.`],
@@ -114,11 +112,11 @@ export function makeComprehensiveDsoQuiz(profile: GalaxyProfile): DsoQuizQuestio
   const sourceFactPool = dsoArticles.flatMap((item) => [
     ...item.mentorPriority.map((point) => ({ objectKey: item.key, point, context: 'Mentor emphasis' })),
     ...item.sections.flatMap((section) => section.keyPoints.map((point) => ({ objectKey: item.key, point, context: section.title }))),
-  ]);
+  ]).filter((item) => !/\bconstellations?\b/i.test(item.point));
   const matchedDistractors = (kind: FactKind) => sourceFactPool.filter((item) => item.objectKey !== profile.key && factKind(item.point, item.context) === kind).map((item) => item.point);
   const questions: DsoQuizQuestion[] = makeGalaxyStudyQuestions(profile).map((question) => sourceQuestion({ ...question, topic: profile.name, difficulty: 'Core', source: 'document' }, profile));
 
-  const preferredSpreadsheetLabels = ['Description', 'Constellation', '(Galaxy) Type', 'Size (longest diameter)', 'Mass (M☉)', 'Redshift', 'Distance', 'Apparent Magnitude', 'Member of', 'Spiral Arms', 'Globular clusters', 'Star Formation Rate (M☉/yr)'];
+  const preferredSpreadsheetLabels = ['Description', '(Galaxy) Type', 'Size (longest diameter)', 'Mass (M☉)', 'Redshift', 'Distance', 'Apparent Magnitude', 'Member of', 'Spiral Arms', 'Globular clusters', 'Star Formation Rate (M☉/yr)'];
   const spreadsheetFacts = (spreadsheetDsoFacts[profile.key] ?? []).filter((fact) => preferredSpreadsheetLabels.includes(fact.label) && fact.value.length <= 190);
   spreadsheetFacts.forEach((fact, index) => {
     const distractors = otherProfiles.flatMap((other) => (spreadsheetDsoFacts[other.key] ?? []).filter((candidate) => candidate.label === fact.label && candidate.value.length <= 190).map((candidate) => candidate.value));
@@ -129,6 +127,7 @@ export function makeComprehensiveDsoQuiz(profile: GalaxyProfile): DsoQuizQuestio
   });
 
   article?.mentorPriority.forEach((point, index) => {
+    if (/\bconstellations?\b/i.test(point)) return;
     const kind = factKind(point, 'Mentor emphasis'), prompt = directFactPrompt(profile, kind);
     if (!prompt) return;
     const distractors = matchedDistractors(kind);
@@ -138,6 +137,7 @@ export function makeComprehensiveDsoQuiz(profile: GalaxyProfile): DsoQuizQuestio
   });
 
   article?.sections.forEach((section, sectionIndex) => section.keyPoints.slice(0, 3).forEach((point, pointIndex) => {
+    if (/\bconstellations?\b/i.test(point)) return;
     const kind = factKind(point, section.title), prompt = directFactPrompt(profile, kind);
     if (!prompt) return;
     const distractors = matchedDistractors(kind);
