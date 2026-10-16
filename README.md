@@ -8,6 +8,7 @@ A GitHub Pages-compatible Science Olympiad Astronomy practice hub. It includes:
 - constellation pages, facts, and quiz questions are excluded
 - an optional identification mode that draws additional views from those public astronomy archives
 - ID filters for paper figures versus object views, wavelength, and challenge level
+- randomized starting figures for each visit or filter change, plus a Shuffle figures button that starts a new randomized run without erasing progress
 - two-step, figure-specific identification hints for the packet images, followed by a recognition takeaway after each answer; research plots that need paper context are flagged explicitly
 - direct-property MCQ galaxy drills plus reveal-and-self-grade FRQs, with Enter keyboard control
 - a per-DSO comprehensive quiz bank compiled from objective properties in `DSOs 2027.xlsx`, mentor-slide priorities, and object reference documents; caption wording is not tested, and MCQ distractors are drawn from the same scientific property category
